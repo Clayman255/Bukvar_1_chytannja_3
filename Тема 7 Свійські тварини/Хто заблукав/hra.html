@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Хто заблукав?</title>
+
+  <style>
+    :root{
+      --bg: #f0f4f8;
+      --card-bg: #ffffff;
+      --accent: #ffd84d;
+      --text: #333333;
+      --good: #22c55e;
+      --bad: #ef4444;
+      --shadow: rgba(0,0,0,0.1);
+      --muted: #94a3b8;
+    }
+
+    body{
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1{
+      margin: 0 0 15px;
+      font-size: 2.2rem;
+      text-align: center;
+      color: #2c3e50;
+    }
+
+    .task{
+      background: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      max-width: 1100px;
+      width: 100%;
+      flex-wrap: wrap;
+    }
+
+    .snd{
+      background: var(--accent);
+      border: none;
+      width: 45px; height: 45px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 1.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 8px var(--shadow);
+      transition: transform 0.1s;
+    }
+    .snd:active{ transform: scale(0.95); }
+
+    .again{
+      background: #e0f2fe;
+      color: #0284c7;
+      border: 2px solid #bae6fd;
+      padding: 8px 16px;
+      border-radius: 12px;
+      font-weight: bold;
+      font-family: Arial, sans-serif;
+      cursor: pointer;
+      display: none;
+      white-space: nowrap;
+    }
+    .again:hover{ background: #bae6fd; }
+
+    .doneText{
+      color: var(--good);
+      display: none;
+      font-weight: bold;
+      white-space: nowrap;
+    }
+
+    .wrap{
+      width: 100%;
+      max-width: 1100px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .rowCard{
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 14px;
+      box-shadow: 0 4px 12px var(--shadow);
+    }
+
+    .rowHead{
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+
+    .rowTitle{
+      font-weight: bold;
+      color: #334155;
+      font-size: 1.1rem;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .badge{
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 28px;
+      height: 28px;
+      padding: 0 10px;
+      border-radius: 999px;
+      background: #f1f5f9;
+      border: 1px solid #e2e8f0;
+      color: #475569;
+      font-size: 0.95rem;
+      font-weight: bold;
+    }
+
+    .status{
+      font-weight: bold;
+      color: var(--muted);
+      font-size: 1rem;
+    }
+    .status.ok{ color: var(--good); }
+
+    .animals{
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    @media (max-width: 800px){
+      .animals{ grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .animalBtn{
+      border: 2px solid #e2e8f0;
+      background: #fff;
+      border-radius: 14px;
+      padding: 10px;
+      cursor: pointer;
+      box-shadow: 0 3px 8px rgba(0,0,0,0.06);
+      transition: transform 0.08s, border-color 0.15s, box-shadow 0.15s;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 140px;
+      position: relative;
+      overflow: hidden;
+    }
+    .animalBtn:active{ transform: scale(0.98); }
+
+    .animalBtn img{
+      max-width: 100%;
+      max-height: 150px;
+      height: auto;
+      width: auto;
+      display: block;
+      pointer-events: none;
+    }
+
+    .animalBtn.wrong{
+      border-color: var(--bad);
+      box-shadow: 0 6px 16px rgba(239,68,68,0.18);
+      animation: shake 0.4s ease-in-out;
+    }
+
+    .animalBtn.correct{
+      border-color: var(--good);
+      box-shadow: 0 8px 18px rgba(34,197,94,0.20);
+      transform: none;
+    }
+
+    .animalBtn.disabled{
+      opacity: 0.35;
+      filter: grayscale(100%);
+      pointer-events: none;
+    }
+
+    .checkMark{
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: var(--good);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      box-shadow: 0 6px 14px rgba(34,197,94,0.25);
+      font-size: 18px;
+    }
+    .animalBtn.correct .checkMark{ display: flex; }
+
+    @keyframes shake{
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .win{
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(255,255,255,0.95);
+      z-index: 1000;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      gap: 20px;
+      padding: 20px;
+    }
+    .win .txt{
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: var(--good);
+    }
+    .btn-restart{
+      background: var(--good);
+      color: #fff;
+      border: none;
+      padding: 15px 30px;
+      font-size: 1.2rem;
+      font-family: Arial, sans-serif;
+      font-weight: bold;
+      border-radius: 12px;
+      cursor: pointer;
+      box-shadow: 0 5px 15px rgba(34,197,94,0.4);
+      transition: transform 0.1s;
+    }
+    .btn-restart:active{ transform: scale(0.98); }
+
+    @media (max-width: 600px){
+      h1{ font-size: 1.6rem; }
+      .task{ padding: 10px; font-size: 1rem; }
+      .animalBtn{ min-height: 120px; }
+      .animalBtn img{ max-height: 120px; }
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Хто заблукав?</h1>
+
+  <div class="task">
+    <button class="snd" data-a="au" title="Прослухати завдання">🔊</button>
+    <button class="again" id="btnAgain" type="button">Показати відповіді</button>
+    <span class="doneText" id="doneText">Чудова робота!</span>
+    <span>Натисни на зайву тварину у кожному рядку.</span>
+  </div>
+
+  <div class="wrap" id="wrap"></div>
+
+  <div class="win" id="win">
+    <div class="txt">Молодець!</div>
+    <button class="btn-restart" id="restart">Зіграти ще раз</button>
+  </div>
+
+  <audio id="au" src="zav.mp3"></audio>
+  <audio id="ok" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+  <audio id="no" src="https://actions.google.com/sounds/v1/cartoon/clang_and_wobble.ogg"></audio>
+
+<script>
+  const rows = [
+    { rowId: 1, items: [1,2,3,10], odd: 10 },
+    { rowId: 2, items: [4,5,6,11], odd: 11 },
+    { rowId: 3, items: [7,8,9,12], odd: 12 },
+  ];
+
+  const $wrap = document.getElementById("wrap");
+  const $win = document.getElementById("win");
+  const $btnAgain = document.getElementById("btnAgain");
+  const $doneText = document.getElementById("doneText");
+  const ok = document.getElementById("ok");
+  const no = document.getElementById("no");
+
+  const solved = new Set(); 
+
+  const shuffle = a => [...a].sort(()=>0.5 - Math.random());
+
+  function stopAll(){
+    document.querySelectorAll("audio").forEach(a=>{
+      try{ a.pause(); a.currentTime = 0; }catch(e){}
+    });
+  }
+  function play(id){
+    const a = document.getElementById(id);
+    if(!a) return;
+    stopAll();
+    a.currentTime = 0;
+    a.play().catch(()=>{});
+  }
+  document.addEventListener("click",(e)=>{
+    const btn = e.target.closest("[data-a]");
+    if(btn) play(btn.dataset.a);
+  });
+
+  document.getElementById("restart").addEventListener("click", init);
+
+  $btnAgain.addEventListener("click", ()=>{
+    rows.forEach(r=>{
+      const oddBtn = document.querySelector(`.animalBtn[data-row="${r.rowId}"][data-id="${r.odd}"]`);
+      if(oddBtn){
+        oddBtn.classList.add("correct");
+        oddBtn.querySelector(".checkMark")?.style && (oddBtn.querySelector(".checkMark").style.display = "flex");
+      }
+    });
+  });
+
+  function init(){
+    solved.clear();
+    $wrap.innerHTML = "";
+    $win.style.display = "none";
+    $btnAgain.style.display = "none";
+    $doneText.style.display = "none";
+
+    rows.forEach(r=>{
+      const card = document.createElement("div");
+      card.className = "rowCard";
+      card.dataset.rowId = r.rowId;
+
+      const head = document.createElement("div");
+      head.className = "rowHead";
+
+      const title = document.createElement("div");
+      title.className = "rowTitle";
+      title.innerHTML = `<span class="badge">${r.rowId}</span>`;
+
+      const status = document.createElement("div");
+      status.className = "status";
+      status.textContent = "";
+      status.dataset.statusFor = r.rowId;
+
+      head.appendChild(title);
+      head.appendChild(status);
+
+      const grid = document.createElement("div");
+      grid.className = "animals";
+
+      const items = shuffle(r.items);
+      items.forEach(id=>{
+        const btn = document.createElement("button");
+        btn.type = "button";
+        btn.className = "animalBtn";
+        btn.dataset.row = r.rowId;
+        btn.dataset.id = id;
+
+        const img = document.createElement("img");
+        img.src = `${id}.png`;
+        img.alt = `Тварина ${id}`;
+
+        const check = document.createElement("div");
+        check.className = "checkMark";
+        check.textContent = "✓";
+
+        btn.appendChild(check);
+        btn.appendChild(img);
+
+        btn.addEventListener("click", ()=>onPick(r.rowId, id, btn));
+        grid.appendChild(btn);
+      });
+
+      card.appendChild(head);
+      card.appendChild(grid);
+      $wrap.appendChild(card);
+    });
+  }
+
+  function onPick(rowId, id, btn){
+    if(solved.has(rowId)) return;
+
+    const row = rows.find(x=>x.rowId === rowId);
+    if(!row) return;
+
+    document.querySelectorAll(`.animalBtn[data-row="${rowId}"].wrong`).forEach(b=>b.classList.remove("wrong"));
+
+    if(id === row.odd){
+      btn.classList.add("correct");
+      ok.currentTime = 0; ok.play().catch(()=>{});
+      solved.add(rowId);
+
+      document.querySelectorAll(`.animalBtn[data-row="${rowId}"]`).forEach(b=>{
+        if(b !== btn) b.classList.add("disabled");
+        b.style.pointerEvents = "none";
+      });
+
+      const st = document.querySelector(`.status[data-status-for="${rowId}"]`);
+      if(st){
+        st.textContent = "Виконано ✓";
+        st.classList.add("ok");
+      }
+
+      checkWin();
+    } else {
+      btn.classList.add("wrong");
+      no.currentTime = 0; no.play().catch(()=>{});
+      setTimeout(()=>btn.classList.remove("wrong"), 450);
+    }
+  }
+
+  function checkWin(){
+    if(solved.size === rows.length){
+      setTimeout(()=>{
+        $win.style.display = "flex";
+        $btnAgain.style.display = "inline-flex";
+        $doneText.style.display = "inline";
+      }, 400);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Встанови відповідність</title>
+
+  <style>
+    :root{
+      --bg: #fff9db;
+      --card-bg: #ffffff;
+      --accent: #ff922b;
+      --text: #000000;
+      --good: #22c55e;
+      --shadow: rgba(0,0,0,0.1);
+      --line-color: #4dabf7;
+    }
+
+    body{
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 20px;
+    }
+
+    h1{ margin: 0 0 15px; font-size: 2.2rem; color: #d9480f; text-align: center; }
+
+    #btnTopRestart {
+      display: none;
+      margin-bottom: 20px;
+      background: var(--good);
+      color: white;
+      border: none;
+      padding: 12px 30px;
+      border-radius: 12px;
+      font-weight: bold;
+      cursor: pointer;
+      font-size: 1.3rem;
+    }
+
+    .task{
+      background: var(--card-bg);
+      padding: 15px 25px;
+      border-radius: 20px;
+      box-shadow: 0 8px 20px var(--shadow);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      margin-bottom: 40px;
+      font-size: 1.3rem;
+      font-weight: bold;
+      max-width: 1200px;
+      width: 100%;
+    }
+
+    .game-area {
+      display: flex;
+      flex-direction: column; 
+      gap: 100px; /* Великий простір для ліній між рядами */
+      width: 100%;
+      max-width: 1300px;
+      position: relative;
+    }
+
+    #canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .row {
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-start;
+      width: 100%;
+      z-index: 10;
+      gap: 15px;
+    }
+
+    .item-wrapper {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 10px;
+      flex: 1; /* Рівномірний розподіл */
+    }
+
+    .snd-btn {
+      background: var(--accent);
+      border: none;
+      width: 80px; height: 80px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 2.2rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px var(--shadow);
+      transition: transform 0.2s;
+    }
+    .snd-btn:active { transform: scale(0.9); }
+
+    .img-box {
+      width: 100%; /* За шириною колонки */
+      aspect-ratio: 1 / 1; /* Квадратні картинки */
+      max-width: 230px; 
+      background: white;
+      border-radius: 15px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 10px var(--shadow);
+      cursor: pointer;
+      padding: 5px;
+      border: 4px solid transparent;
+      transition: all 0.2s;
+    }
+    .img-box img { width: 100%; height: 100%; object-fit: contain; pointer-events: none; }
+    .img-box.correct-item { border-color: var(--good); pointer-events: none; transform: scale(1.02); }
+
+    .dot {
+      width: 20px;
+      height: 20px;
+      background: #ced4da;
+      border-radius: 50%;
+      border: 3px solid white;
+      transition: background 0.3s;
+    }
+    .dot.active { background: var(--line-color); box-shadow: 0 0 10px var(--line-color); }
+
+    #winMsg {
+      display: none;
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: white;
+      padding: 40px 60px;
+      border-radius: 30px;
+      box-shadow: 0 10px 50px rgba(0,0,0,0.3);
+      z-index: 2000;
+      text-align: center;
+      border: 6px solid var(--good);
+    }
+  </style>
+</head>
+
+<body>
+  <h1>Встанови відповідність</h1>
+
+  <button id="btnTopRestart" onclick="location.reload()">Зіграти ще раз</button>
+
+  <div class="task">
+    <button class="snd-btn" style="width:45px; height:45px; font-size:1.1rem;" onclick="playSnd('zav.mp3')">🔊</button>
+    <span>Встанови відповідність між звуком та зображенням.</span>
+  </div>
+
+  <div class="game-area" id="gameArea">
+    <canvas id="canvas"></canvas>
+
+    <div class="row" id="soundsRow">
+      </div>
+
+    <div class="row" id="imagesBottom">
+      </div>
+  </div>
+
+  <div id="winMsg">
+    <div style="font-size: 4rem;">🌟</div>
+    <div style="font-size: 2.5rem; font-weight: bold; color: var(--good);">Молодець! Вдалося!</div>
+  </div>
+
+  <audio id="audioPlayer"></audio>
+  <audio id="popSnd" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+
+<script>
+  const ids = [1, 2, 3, 4, 5];
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const audioPlayer = document.getElementById('audioPlayer');
+  
+  let selectedStart = null;
+  let connections = []; 
+  let correctCount = 0;
+
+  function init() {
+    const soundsRow = document.getElementById('soundsRow');
+    const imagesBottom = document.getElementById('imagesBottom');
+    
+    // Створюємо звукові кнопки (в оригінальному порядку 1-5)
+    soundsRow.innerHTML = ids.map(id => `
+      <div class="item-wrapper">
+        <button class="snd-btn" onclick="handleSndClick(${id}, '${id}.mp3')">🔊</button>
+        <div class="dot" id="start-${id}"></div>
+      </div>
+    `).join('');
+
+    // Створюємо картинки (перемішані)
+    const shuffledIds = [...ids].sort(() => Math.random() - 0.5);
+    imagesBottom.innerHTML = shuffledIds.map(id => `
+      <div class="item-wrapper">
+        <div class="dot" id="end-${id}"></div>
+        <div class="img-box" id="box-${id}" onclick="handleImgClick(${id})">
+          <img src="${id}.png" alt="">
+        </div>
+      </div>
+    `).join('');
+
+    setTimeout(resizeCanvas, 500);
+    window.addEventListener('resize', resizeCanvas);
+  }
+
+  function resizeCanvas() {
+    const area = document.getElementById('gameArea');
+    const rect = area.getBoundingClientRect();
+    canvas.width = rect.width;
+    canvas.height = rect.height;
+    drawLines();
+  }
+
+  function playSnd(file) {
+    audioPlayer.src = file;
+    audioPlayer.play().catch(()=>{});
+  }
+
+  function handleSndClick(id, file) {
+    playSnd(file);
+    if(selectedStart) document.getElementById(`start-${selectedStart}`).classList.remove('active');
+    selectedStart = id;
+    document.getElementById(`start-${selectedStart}`).classList.add('active');
+  }
+
+  function handleImgClick(imgId) {
+    if (!selectedStart) return;
+    
+    if (selectedStart === imgId) {
+      if (!connections.find(c => c.id === imgId)) {
+        connections.push({id: imgId});
+        document.getElementById('popSnd').play();
+        correctCount++;
+        
+        document.getElementById(`start-${imgId}`).classList.add('active');
+        document.getElementById(`end-${imgId}`).classList.add('active');
+        document.getElementById(`box-${imgId}`).classList.add('correct-item');
+        
+        selectedStart = null;
+        drawLines();
+        checkWin();
+      }
+    } else {
+      const el = document.getElementById(`box-${imgId}`);
+      el.style.borderColor = 'red';
+      setTimeout(() => el.style.borderColor = 'transparent', 500);
+    }
+  }
+
+  function drawLines() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.setLineDash([10, 8]); 
+    ctx.lineWidth = 6;
+    ctx.strokeStyle = '#4dabf7';
+
+    const areaRect = document.getElementById('gameArea').getBoundingClientRect();
+
+    connections.forEach(conn => {
+      const sDot = document.getElementById(`start-${conn.id}`);
+      const eDot = document.getElementById(`end-${conn.id}`);
+      
+      const sRect = sDot.getBoundingClientRect();
+      const eRect = eDot.getBoundingClientRect();
+
+      const x1 = sRect.left - areaRect.left + (sRect.width/2);
+      const y1 = sRect.top - areaRect.top + (sRect.height/2);
+      const x2 = eRect.left - areaRect.left + (eRect.width/2);
+      const y2 = eRect.top - areaRect.top + (eRect.height/2);
+
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.lineTo(x2, y2);
+      ctx.stroke();
+      
+      // Стрілочка на кінці лінії
+      const angle = Math.atan2(y2 - y1, x2 - x1);
+      ctx.beginPath();
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 20 * Math.cos(angle - Math.PI / 7), y2 - 20 * Math.sin(angle - Math.PI / 7));
+      ctx.moveTo(x2, y2);
+      ctx.lineTo(x2 - 20 * Math.cos(angle + Math.PI / 7), y2 - 20 * Math.sin(angle + Math.PI / 7));
+      ctx.stroke();
+    });
+  }
+
+  function checkWin() {
+    if (correctCount === ids.length) {
+      setTimeout(() => {
+        document.getElementById('winMsg').style.display = 'block';
+        document.getElementById('btnTopRestart').style.display = 'block';
+      }, 500);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

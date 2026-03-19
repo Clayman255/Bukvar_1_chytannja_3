@@ -1,0 +1,237 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Добери модель</title>
+  <style>
+    :root {
+      --bg: #fdf5e6; /* Кремовий фон */
+      --accent: #4da6ff;
+      --bad: #ef4444;
+      --good: #16a34a;
+      --text-main: #000000; /* Чорний текст */
+      --dark-blue: #1e3a8a; /* Темно-синій для кнопки */
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: #2c3e50;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    header { text-align: center; margin-bottom: 20px; }
+    
+    h1 { 
+      color: var(--text-main); 
+      margin-bottom: 10px; 
+      font-size: 2rem; 
+    }
+
+    .task-desc {
+      font-size: 1.3rem;
+      background: #fff;
+      padding: 15px 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+      border-left: 6px solid var(--accent);
+      color: var(--text-main);
+    }
+
+    .quiz-container {
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 30px;
+      margin-top: 30px;
+    }
+
+    .word-display {
+      font-size: 48px;
+      font-weight: bold;
+      background: #fff;
+      padding: 20px 80px;
+      border-radius: 20px;
+      box-shadow: 0 6px 15px rgba(0,0,0,0.1);
+      color: #000;
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 30px;
+      width: 100%;
+    }
+
+    .option-card {
+      background: #fff;
+      border-radius: 15px;
+      padding: 30px;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+      border: 5px solid transparent;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 250px;
+    }
+
+    .option-card img {
+      max-width: 100%;
+      max-height: 240px; 
+      pointer-events: none;
+    }
+
+    .option-card:hover { transform: translateY(-5px); box-shadow: 0 8px 20px rgba(0,0,0,0.1); }
+    .option-card.correct { border-color: var(--good); background-color: #f0fff4; }
+    .option-card.wrong { border-color: var(--bad); animation: shake 0.4s; }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-10px); }
+      75% { transform: translateX(10px); }
+    }
+
+    .progress { 
+      font-size: 1.2rem; 
+      font-weight: bold; 
+      margin-bottom: 5px; 
+      color: #555;
+    }
+
+    .win-message {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white;
+      padding: 50px 80px; border-radius: 25px; font-size: 3rem;
+      font-weight: bold; color: var(--good); border: 8px solid var(--good);
+      box-shadow: 0 30px 80px rgba(0,0,0,0.4); z-index: 100; text-align: center;
+    }
+
+    /* Стиль кнопки "Грати знову" */
+    button.reset-btn {
+      margin-top: 30px; 
+      padding: 15px 45px;
+      font-size: 1.5rem; 
+      background: #ffffff; 
+      color: var(--dark-blue); 
+      border: 3px solid var(--dark-blue); 
+      border-radius: 12px; 
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.2s;
+    }
+    
+    button.reset-btn:hover {
+      background: var(--dark-blue);
+      color: #ffffff;
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Вікторина</h1>
+  <div class="task-desc">Добери модель до слова.</div>
+</header>
+
+<div class="progress" id="progressText">Питання 1 з 6</div>
+
+<div class="quiz-container">
+  <div class="word-display" id="currentWord">гроза</div>
+  <div class="options" id="optionsGrid"></div>
+</div>
+
+<div id="winMsg" class="win-message">
+  Чудово! <br> Завдання виконано!
+  <br>
+  <button class="reset-btn" onclick="location.reload()">Грати знову</button>
+</div>
+
+<audio id="soundCorrect" src="https://actions.google.com/sounds/v1/cartoon/pop.ogg"></audio>
+<audio id="soundWrong" src="https://actions.google.com/sounds/v1/cartoon/clank_car_crash.ogg"></audio>
+
+<script>
+  const quizData = [
+    { word: 'гроза', correct: '1.png' },
+    { word: 'липа', correct: '2.png' },
+    { word: 'роса', correct: '3.png' },
+    { word: 'ірис', correct: '4.png' },
+    { word: 'літо', correct: '5.png' },
+    { word: 'оса', correct: '6.png' }
+  ];
+
+  const allModels = quizData.map(item => item.correct);
+
+  let currentIndex = 0;
+  const wordDisplay = document.getElementById('currentWord');
+  const optionsGrid = document.getElementById('optionsGrid');
+  const progressText = document.getElementById('progressText');
+  const winMsg = document.getElementById('winMsg');
+
+  function loadQuestion() {
+    if (currentIndex >= quizData.length) {
+      winMsg.style.display = 'block';
+      return;
+    }
+
+    const currentItem = quizData[currentIndex];
+    wordDisplay.textContent = currentItem.word;
+    progressText.textContent = `Питання ${currentIndex + 1} з ${quizData.length}`;
+    
+    let wrongModels = allModels.filter(m => m !== currentItem.correct);
+    let randomWrong = wrongModels[Math.floor(Math.random() * wrongModels.length)];
+
+    const options = [
+      { img: currentItem.correct, isCorrect: true },
+      { img: randomWrong, isCorrect: false }
+    ];
+
+    // Логіка чергування: на парних індексах (0, 2, 4...) правильна зліва, 
+    // на непарних (1, 3, 5...) правильна справа.
+    if (currentIndex % 2 !== 0) {
+      options.reverse();
+    }
+
+    optionsGrid.innerHTML = '';
+    options.forEach(opt => {
+      const card = document.createElement('div');
+      card.className = 'option-card';
+      const img = document.createElement('img');
+      img.src = opt.img;
+      card.appendChild(img);
+      
+      card.onclick = () => checkAnswer(opt.isCorrect, card);
+      optionsGrid.appendChild(card);
+    });
+  }
+
+  function checkAnswer(isCorrect, element) {
+    if (isCorrect) {
+      element.classList.add('correct');
+      document.getElementById('soundCorrect').play().catch(()=>{});
+      setTimeout(() => {
+        currentIndex++;
+        loadQuestion();
+      }, 800);
+    } else {
+      element.classList.add('wrong');
+      document.getElementById('soundWrong').play().catch(()=>{});
+      setTimeout(() => {
+        element.classList.remove('wrong');
+      }, 400);
+    }
+  }
+
+  loadQuestion();
+</script>
+</body>
+</html>

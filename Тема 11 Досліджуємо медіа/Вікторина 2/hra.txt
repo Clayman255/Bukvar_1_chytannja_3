@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Взаємодіємо з медіа</title>
+    <style>
+        :root {
+            --bg: #fdfcf0;
+            --accent: #3498db;
+            --success: #22c55e;
+            --error: #ef4444;
+            --text: #2c3e50;
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 10px;
+            margin: 0;
+        }
+
+        header { text-align: center; margin-bottom: 10px; width: 100%; }
+        h1 { font-size: 2rem; color: #2980b9; margin-bottom: 5px; }
+
+        .task-desc {
+            font-size: 1.2rem; 
+            background: #fff; 
+            padding: 10px 20px;
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 1100px; 
+            width: 95%;
+            border-bottom: 5px solid var(--accent);
+            display: flex;
+            align-items: center;
+            justify-content: center; 
+            gap: 15px;
+            margin: 0 auto 15px auto;
+        }
+
+        .quiz-container {
+            width: 95%;
+            max-width: 1200px;
+            background: white;
+            padding: 20px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .progress {
+            font-size: 1.2rem;
+            color: #64748b;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .question-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .question-text {
+            font-size: 1.8rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+        }
+
+        .main-img, .main-video {
+            max-width: 100%;
+            height: auto;
+            max-height: 500px;
+            border-radius: 15px;
+            background: #f8fafc;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .sms-zone {
+            background: #e1f5fe;
+            border: 3px dashed var(--accent);
+            border-radius: 15px;
+            padding: 25px;
+            min-height: 60px;
+            margin-bottom: 20px;
+            font-size: 1.8rem;
+            text-align: left;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 15px;
+            width: 100%;
+            margin-top: auto;
+        }
+
+        .option-btn {
+            padding: 20px;
+            font-size: 1.5rem;
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .option-btn:hover { border-color: var(--accent); background: #f0f9ff; }
+        .option-btn.correct { border-color: var(--success) !important; background-color: #f0fff4 !important; }
+        .option-btn.wrong { border-color: var(--error) !important; animation: shake 0.4s; }
+
+        .word-pill {
+            display: inline-block;
+            padding: 15px 30px;
+            margin: 8px;
+            background: #fff;
+            border: 3px solid #e2e8f0;
+            border-radius: 40px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1.5rem;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .audio-btn {
+            background: #ff9f43;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.4rem;
+            box-shadow: 0 4px 0 #d35400;
+            flex-shrink: 0;
+        }
+
+        .win-screen {
+            display: none;
+            text-align: center;
+            padding: 60px;
+        }
+
+        .hidden { visibility: hidden; pointer-events: none; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Взаємодіємо з медіа</h1>
+    <div class="task-desc">
+        <button class="audio-btn" onclick="playSound('zav.mp3')">🔊</button>
+        <span>Виконай завдання.</span>
+    </div>
+</header>
+
+<div class="quiz-container" id="quiz">
+    <div class="progress" id="progress"></div>
+    
+    <div class="question-box">
+        <div class="question-text" id="q-text"></div>
+        <div id="q-media-container"></div>
+    </div>
+
+    <div id="special-area"></div>
+    <div class="options-grid" id="options"></div>
+</div>
+
+<div class="win-screen" id="win-screen">
+    <h2 style="font-size: 3.5rem; color: #22c55e;">Вітаю! Завдання виконано! 🎉</h2>
+    <button style="padding: 20px 40px; font-size: 1.5rem; cursor: pointer; border-radius: 15px; border: 2px solid #3498db; background: white;" onclick="location.reload()">Зіграти ще раз</button>
+</div>
+
+<script>
+    const quizData = [
+        {
+            q: "Чого вчить ця реклама?",
+            audio: "zav1.mp3",
+            video: "1.mp4", 
+            type: "choice",
+            options: [
+                { text: "Бути щедрим.", correct: false, audio: "01.mp3" },
+                { text: "Радіти життю.", correct: false, audio: "02.mp3" },
+                { text: "Допомагати старшим.", correct: true, audio: "03.mp3" }
+            ]
+        },
+        {
+            q: "Що це?",
+            audio: "zav2.mp3",
+            img: "2.png",
+            type: "choice",
+            options: [
+                { text: "Афіша.", correct: true, audio: "001.mp3" },
+                { text: "Комікс.", correct: false, audio: "002.mp3" },
+                { text: "Листівка.", correct: false, audio: "003.mp3" }
+            ]
+        },
+        {
+            q: "Склади з речень смс-повідомлення.",
+            audio: "zav3.mp3",
+            type: "constructor",
+            words: [
+                { text: "Добрий день!", audio: "sms1.mp3", order: 0 },
+                { text: "Я надіслала завдання на електронну пошту.", audio: "sms2.mp3", order: 1 },
+                { text: "До побачення!", audio: "sms3.mp3", order: 2 }
+            ]
+        }
+    ];
+
+    let currentStep = 0;
+    let smsStep = 0;
+    let currentAudio = null;
+
+    function playSound(file) {
+        if (currentAudio) {
+            currentAudio.pause();
+            currentAudio.currentTime = 0;
+        }
+        currentAudio = new Audio(file);
+        return currentAudio.play().catch(e => console.log("Audio play error"));
+    }
+
+    function loadQuestion() {
+        const data = quizData[currentStep];
+        document.getElementById('progress').textContent = `Завдання ${currentStep + 1} з ${quizData.length}`;
+        
+        document.getElementById('q-text').innerHTML = `
+            <button class="audio-btn" onclick="playSound('${data.audio}')">🔊</button>
+            <span>${data.q}</span>
+        `;
+
+        const mediaContainer = document.getElementById('q-media-container');
+        mediaContainer.innerHTML = '';
+        
+        if (data.video) {
+            mediaContainer.innerHTML = `<video src="${data.video}" class="main-video" controls></video>`;
+        } else if (data.img) {
+            mediaContainer.innerHTML = `<img src="${data.img}" class="main-img">`;
+        }
+
+        const optionsContainer = document.getElementById('options');
+        const specialArea = document.getElementById('special-area');
+        optionsContainer.innerHTML = '';
+        specialArea.innerHTML = '';
+
+        if (data.type === 'choice') {
+            optionsContainer.style.display = 'grid';
+            data.options.forEach(opt => {
+                const btn = document.createElement('button');
+                btn.className = 'option-btn';
+                btn.innerHTML = `
+                    <span>${opt.text}</span>
+                    <div class="audio-btn" style="width:40px; height:40px; font-size:1.1rem;" onclick="event.stopPropagation(); playSound('${opt.audio}')">🔊</div>
+                `;
+                btn.onclick = () => {
+                    if (opt.correct) {
+                        btn.classList.add('correct');
+                        setTimeout(nextStep, 1500);
+                    } else {
+                        btn.classList.add('wrong');
+                        setTimeout(() => btn.classList.remove('wrong'), 400);
+                    }
+                };
+                optionsContainer.appendChild(btn);
+            });
+        } else if (data.type === 'constructor') {
+            specialArea.innerHTML = `<div class="sms-zone" id="sms-output"></div>`;
+            const shuffled = [...data.words].sort(() => Math.random() - 0.5);
+            optionsContainer.style.display = 'block';
+            
+            shuffled.forEach(wordObj => {
+                const pill = document.createElement('div');
+                pill.className = 'word-pill';
+                pill.innerHTML = `🔊 ${wordObj.text}`;
+                pill.onclick = () => {
+                    playSound(wordObj.audio);
+                    
+                    if (wordObj.order === smsStep) {
+                        const span = document.createElement('span');
+                        span.textContent = wordObj.text + " ";
+                        document.getElementById('sms-output').appendChild(span);
+                        pill.classList.add('hidden');
+                        smsStep++;
+                        if (smsStep === data.words.length) {
+                            // Коли зібрано останнє слово, чекаємо поки воно договорить
+                            currentAudio.onended = () => {
+                                setTimeout(nextStep, 500);
+                            };
+                        }
+                    }
+                };
+                optionsContainer.appendChild(pill);
+            });
+        }
+    }
+
+    function nextStep() {
+        currentStep++;
+        if (currentStep < quizData.length) {
+            if (currentAudio) currentAudio.pause();
+            loadQuestion();
+        } else {
+            // Перевіряємо, чи звук ще грає
+            if (currentAudio && !currentAudio.paused && !currentAudio.ended) {
+                currentAudio.onended = () => {
+                    showWinScreen();
+                };
+            } else {
+                showWinScreen();
+            }
+        }
+    }
+
+    function showWinScreen() {
+        document.getElementById('quiz').style.display = 'none';
+        document.getElementById('win-screen').style.display = 'block';
+    }
+
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>

@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Багатство України</title>
+    <style>
+        :root {
+            --bg: #fdfcf0;
+            --accent: #f1c40f;
+            --success-text: #065f46; 
+            --success-border: #22c55e; 
+            --error: #ef4444;
+            --dark-blue: #1a3a5a; 
+            --black: #000000;    
+        }
+
+        body {
+            font-family: 'Arial', sans-serif;
+            background: var(--bg);
+            color: var(--black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+            margin: 0;
+        }
+
+        header { text-align: center; margin-bottom: 20px; }
+        h1 { font-size: 2.5rem; color: var(--dark-blue); margin-bottom: 10px; }
+
+        .task-desc {
+            font-size: 1.2rem; 
+            background: #fff; 
+            padding: 15px 25px;
+            border-radius: 15px; 
+            box-shadow: 0 4px 15px rgba(0,0,0,0.05);
+            max-width: 800px; 
+            border-bottom: 5px solid var(--dark-blue);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .quiz-container {
+            width: 100%;
+            max-width: 700px;
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        .progress {
+            font-size: 1.1rem;
+            color: var(--black);
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        .question-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .question-text {
+            font-size: 1.6rem;
+            font-weight: bold;
+            color: var(--dark-blue);
+        }
+
+        .main-img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: contain; 
+            border-radius: 12px;
+            background: #f8fafc;
+            border: 2px solid #eee;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .option-container {
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .option-btn {
+            width: 100%;
+            padding: 25px 10px;
+            font-size: 1.3rem;
+            background: #ffffff;
+            border: 3px solid #e2e8f0;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            color: var(--black);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option-btn:hover { border-color: var(--dark-blue); background: #f0f9ff; }
+
+        .option-btn.correct {
+            border: 3px solid var(--success-border) !important;
+            background-color: #ffffff !important;
+            color: var(--success-text) !important;
+        }
+
+        .option-btn.wrong {
+            border-color: var(--error) !important;
+            background-color: #fef2f2 !important;
+            animation: shake 0.4s ease-in-out;
+        }
+
+        .inner-audio-btn {
+            background: #ff9f43;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            box-shadow: 0 3px 0 #d35400;
+            z-index: 2;
+        }
+        .inner-audio-btn:active { transform: translateY(2px); box-shadow: none; }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-8px); }
+            75% { transform: translateX(8px); }
+        }
+
+        .audio-btn {
+            background: #ff9f43;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            box-shadow: 0 4px 0 #d35400;
+        }
+
+        .win-screen {
+            display: none;
+            text-align: center;
+            padding: 40px;
+        }
+        .win-screen h2 { font-size: 3rem; color: var(--success-border); }
+
+        .reset-btn {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 1.2rem;
+            background: #ffffff;
+            color: #000000;
+            border: 2px solid #000000;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+        .reset-btn:hover { background: #f0f0f0; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Багатство України</h1>
+    <div class="task-desc">
+        <button class="audio-btn" onclick="playSound('zav.mp3')">🔊</button>
+        <span>Поміркуй, для яких областей України найбільш характерними є ці об'єкти. Обери правильну відповідь.</span>
+    </div>
+</header>
+
+<div class="quiz-container" id="quiz">
+    <div class="progress" id="progress">Об'єкт 1 з 10</div>
+    
+    <div class="question-box">
+        <div class="question-text" id="q-text"></div>
+        <img id="q-image" src="" class="main-img">
+    </div>
+
+    <div class="options-grid" id="options"></div>
+</div>
+
+<div class="win-screen" id="win-screen">
+    <h2>Чудово! Все вдалося! 🎉</h2>
+    <button class="reset-btn" onclick="location.reload()">Зіграти ще раз</button>
+</div>
+
+<script>
+    const quizData = [
+        { obj: "Бурштин", img: "1.jpg", ok: "Рівненська", okSnd: "1.mp3", no: "Херсонська", noSnd: "2.mp3" },
+        { obj: "Вугілля", img: "2.jpg", ok: "Донецька", okSnd: "3.mp3", no: "Тернопільська", noSnd: "4.mp3" },
+        { obj: "Льон-довгунець", img: "3.jpg", ok: "Чернігівська", okSnd: "5.mp3", no: "Миколаївська", noSnd: "6.mp3" },
+        { obj: "Природний газ", img: "4.jpg", ok: "Харківська", okSnd: "7.mp3", no: "Хмельницька", noSnd: "8.mp3" },
+        { obj: "Цукровий буряк", img: "5.png", ok: "Вінницька", okSnd: "9.mp3", no: "Закарпатська", noSnd: "10.mp3" },
+        { obj: "Кавун", img: "6.png", ok: "Херсонська", okSnd: "2.mp3", no: "Київська", noSnd: "11.mp3" },
+        { obj: "Торф", img: "7.png", ok: "Волинська", okSnd: "12.mp3", no: "Одеська", noSnd: "13.mp3" },
+        { obj: "Залізна руда", img: "8.jpg", ok: "Дніпропетровська", okSnd: "14.mp3", no: "Хмельницька", noSnd: "8.mp3" },
+        { obj: "Кукурудза", img: "9.jpg", ok: "Полтавська", okSnd: "15.mp3", no: "Івано-Франківська", noSnd: "16.mp3" },
+        { obj: "Пшениця", img: "10.jpg", ok: "Одеська", okSnd: "13.mp3", no: "Закарпатська", noSnd: "10.mp3" }
+    ];
+
+    let currentStep = 0;
+
+    function playSound(file) {
+        const audio = new Audio(file);
+        audio.play().catch(e => console.log("Файл не знайдено: " + file));
+    }
+
+    function loadQuestion() {
+        const data = quizData[currentStep];
+        document.getElementById('progress').textContent = `Об'єкт ${currentStep + 1} з ${quizData.length}`;
+        document.getElementById('q-text').textContent = data.obj;
+        document.getElementById('q-image').src = data.img;
+
+        const optionsContainer = document.getElementById('options');
+        optionsContainer.innerHTML = '';
+
+        const variants = [
+            { text: data.ok, audio: data.okSnd, correct: true },
+            { text: data.no, audio: data.noSnd, correct: false }
+        ].sort(() => Math.random() - 0.5);
+
+        variants.forEach(variant => {
+            const container = document.createElement('div');
+            container.className = 'option-container';
+
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.innerHTML = `<span>${variant.text}</span>`;
+            
+            btn.onclick = () => checkAnswer(variant, btn);
+
+            const sndBtn = document.createElement('button');
+            sndBtn.className = 'inner-audio-btn';
+            sndBtn.innerHTML = '🔊';
+            sndBtn.onclick = (e) => {
+                e.stopPropagation(); 
+                playSound(variant.audio);
+            };
+
+            btn.appendChild(sndBtn);
+            container.appendChild(btn);
+            optionsContainer.appendChild(container);
+        });
+    }
+
+    function checkAnswer(variant, btn) {
+        // Блокуємо тільки кнопки поточної перевірки
+        document.querySelectorAll('.option-btn, .inner-audio-btn').forEach(b => b.style.pointerEvents = 'none');
+        
+        if (variant.correct) {
+            btn.classList.add('correct');
+            // При натисканні на саму область звук тепер НЕ відтворюється (тільки на кнопку звуку)
+            
+            setTimeout(() => {
+                currentStep++;
+                if (currentStep < quizData.length) {
+                    loadQuestion();
+                } else {
+                    showWin();
+                }
+            }, 1500);
+        } else {
+            btn.classList.add('wrong');
+            // При неправильному натисканні звук тепер ТАКОЖ НЕ відтворюється (тільки на кнопку звуку)
+            
+            setTimeout(() => {
+                btn.classList.remove('wrong');
+                document.querySelectorAll('.option-btn, .inner-audio-btn').forEach(b => b.style.pointerEvents = 'auto');
+            }, 1000);
+        }
+    }
+
+    function showWin() {
+        document.getElementById('quiz').style.display = 'none';
+        document.getElementById('win-screen').style.display = 'block';
+    }
+
+    window.onload = loadQuestion;
+</script>
+
+</body>
+</html>

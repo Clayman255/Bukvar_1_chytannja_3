@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Що це таке?</title>
+  <style>
+    :root{
+      --bg:#fbf6ee;
+      --card:#ffffff;
+      --text:#2f2f2f;
+      --muted:#6b6b6b;
+      --accent:#ffd84d;
+      --ok:#16a34a;
+      --bad:#ef4444;
+      --shadow: rgba(0,0,0,.12);
+      --radius:18px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+    .wrap{
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 18px 14px 18px;
+    }
+    h1{margin:0 0 12px;font-size:34px;letter-spacing:.2px}
+
+    /* Panel */
+    .panel{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 24px var(--shadow);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .panelHead{
+      display:flex;align-items:center;justify-content:space-between;gap:10px;
+      cursor:pointer;user-select:none;
+    }
+    .panelTitle{
+      display:flex;align-items:center;gap:10px;
+      font-weight:800;font-size:18px;
+    }
+    .toggleIcon{
+      width:34px;height:34px;border-radius:10px;
+      background: rgba(255,216,77,.35);
+      display:grid;place-items:center;font-size:18px;
+      flex:0 0 auto;
+    }
+    .panelBody{margin-top:10px;display:none}
+    .panelBody.open{display:block}
+    .qList{display:flex;flex-direction:column;gap:10px;padding:4px 2px 2px}
+    .qItem{
+      display:flex;align-items:flex-start;gap:10px;
+      padding:10px;border-radius:14px;background:rgba(0,0,0,.03);
+    }
+    .qNum{
+      width:26px;height:26px;border-radius:9px;
+      background: rgba(255,216,77,.55);
+      display:grid;place-items:center;font-weight:800;flex:0 0 auto;margin-top:2px;
+    }
+    .qText{line-height:1.25;font-size:16px;flex:1}
+
+    /* Buttons */
+    .btn{
+      border:0;cursor:pointer;border-radius:12px;
+      padding:10px 12px;font-weight:900;
+      background: rgba(0,0,0,.06);color: var(--text);
+      display:inline-flex;align-items:center;justify-content:center;
+      transition: transform .05s ease, background .2s ease;
+      user-select:none;
+      min-width: 42px;
+      line-height: 1;
+    }
+    .btn:active{transform: scale(.99)}
+    .btnAudio{background: rgba(255,216,77,.55)}
+    .btnSmall{padding:8px 10px;border-radius:12px;font-weight:900;min-width: 40px}
+    .reset{
+      background: rgba(0,0,0,.08);
+      padding:10px 14px;
+      border-radius: 14px;
+      min-width: unset;
+    }
+
+    /* Task row */
+    .taskRow{
+      display:flex;align-items:center;justify-content:space-between;gap:12px;
+      flex-wrap:wrap;
+    }
+    .taskText{
+      font-size:18px;font-weight:950;
+      display:flex;align-items:center;gap:10px;
+    }
+
+    /* Arena */
+    .arena{
+      background: var(--card);
+      border-radius: var(--radius);
+      box-shadow: 0 10px 24px var(--shadow);
+      padding: 14px;
+    }
+
+    /* Layout */
+    .arenaLayout{
+      display:grid;
+      grid-template-columns: 1fr 260px 1fr;
+      gap: 14px;
+      align-items:start;
+    }
+    @media (max-width: 980px){
+      .arenaLayout{grid-template-columns: 1fr;}
+    }
+
+    .centerCol{display:flex;flex-direction:column;gap:12px;}
+
+    /* Images */
+    .imgTargets{
+      display:grid;
+      grid-template-columns: repeat(2, minmax(210px, 1fr));
+      gap: 12px;
+    }
+    .imgTargets.three .imgTarget:nth-child(3){
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: min(360px, 100%);
+    }
+    @media (max-width: 560px){
+      .imgTargets{grid-template-columns: 1fr}
+      .imgTargets.three .imgTarget:nth-child(3){grid-column:auto;width:auto;}
+    }
+
+    .imgTarget{
+      border-radius: 18px;
+      background: rgba(0,0,0,.03);
+      border: 2px solid rgba(0,0,0,.10);
+      padding: 10px;
+      min-height: 210px;
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      position:relative;
+      overflow:hidden;
+    }
+    .imgTarget.dragover{
+      border-color: rgba(255,216,77,.9);
+      box-shadow: 0 0 0 6px rgba(255,216,77,.25);
+      background: rgba(255,216,77,.08);
+    }
+    .imgBig{
+      width: 100%;
+      height: 150px;
+      object-fit: contain;
+      user-select:none;
+      pointer-events:none;
+    }
+
+    .imgTarget.mid{min-height: 170px;}
+    .imgTarget.mid .imgBig{height: 115px;}
+
+    .dropRow{
+      width:100%;
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      gap:10px;
+    }
+    .dropSlot{
+      width: 80px;
+      height: 52px;
+      border-radius: 14px;
+      border: 2px dashed rgba(0,0,0,.18);
+      display:grid;place-items:center;
+      color: var(--muted);
+      font-weight:900;
+      background: rgba(255,255,255,.65);
+      flex:0 0 auto;
+      font-size: 18px;
+    }
+    .dropSlot.filled{
+      border-style: solid;
+      border-color: rgba(0,0,0,.12);
+      background: rgba(255,255,255,.95);
+    }
+    .resultIcon{
+      width: 34px; height:34px;border-radius: 12px;
+      display:grid;place-items:center;font-weight:900;flex:0 0 auto;
+      display:none;
+    }
+    .ok{background: rgba(22,163,74,.12); color: var(--ok)}
+    .bad{background: rgba(239,68,68,.12); color: var(--bad)}
+
+    /* Center sounds -> 2 columns + 7th centered */
+    .soundsBox{
+      border-radius: 18px;
+      background: rgba(0,0,0,.03);
+      border: 2px solid rgba(0,0,0,.10);
+      padding: 10px;
+      overflow:hidden;
+    }
+    .chips{
+      display:grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap:10px;
+      align-items:stretch;
+    }
+    .chip{
+      border-radius: 999px;
+      padding: 10px 10px;
+      background: rgba(255,216,77,.55);
+      border: 2px solid rgba(0,0,0,.10);
+      font-weight: 950;
+      cursor: grab;
+      user-select:none;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      font-size: 18px;
+      width:100%;
+    }
+    /* ✅ 7th chip centered across both columns */
+    .chip.centered{
+      grid-column: 1 / -1;
+      justify-self: center;
+      width: 70%;
+      max-width: 220px;
+    }
+    .chip:active{cursor:grabbing}
+    .chip.dragging{opacity:.55; transform: scale(.98)}
+    .chip .play{
+      border:0;cursor:pointer;border-radius: 999px;
+      padding: 8px 10px;
+      font-weight:900;
+      background: rgba(255,255,255,.75);
+      line-height: 1;
+    }
+
+    .win{
+      margin-top: 10px;
+      font-weight:900;
+      color: var(--ok);
+      display:none;
+      font-size: 18px;
+      text-align:center;
+    }
+    .win.show{display:block}
+
+    .retryIcon{
+      position:absolute;
+      left:10px;
+      bottom:10px;
+      width:40px;
+      height:40px;
+      border-radius: 14px;
+      border:0;
+      cursor:pointer;
+      background: rgba(239,68,68,.12);
+      color: var(--bad);
+      font-weight: 950;
+      display:grid;
+      place-items:center;
+      line-height:1;
+      box-shadow: 0 8px 18px rgba(0,0,0,.12);
+    }
+    .retryIcon:active{transform: scale(.99)}
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <h1>Що це таке?</h1>
+
+    <div class="panel" id="discussionPanel">
+      <div class="panelHead" id="toggleDiscussion" role="button" aria-expanded="false">
+        <div class="panelTitle">
+          <span class="toggleIcon" id="toggleIcon">👁️</span>
+          <span>Питання для обговорення</span>
+        </div>
+        <button class="btn btnSmall" type="button" id="toggleBtn" aria-label="Згорнути / розгорнути">+</button>
+      </div>
+
+      <div class="panelBody" id="discussionBody" aria-hidden="true">
+        <div class="qList" id="questions"></div>
+      </div>
+    </div>
+
+    <div class="panel">
+      <div class="taskRow">
+        <div class="taskText">
+          <span>З'єднай назву предмета з його зображенням.</span>
+          <button class="btn btnAudio" type="button" id="taskAudioBtn" title="🔊">🔊</button>
+        </div>
+        <button class="btn reset" type="button" id="resetBtn">↺</button>
+      </div>
+    </div>
+
+    <div class="arena">
+      <div class="arenaLayout">
+        <div class="leftGroup">
+          <div class="imgTargets three" id="leftTargets"></div>
+        </div>
+
+        <div class="centerCol">
+          <div class="soundsBox">
+            <div class="chips" id="soundChips"></div>
+            <div class="win" id="winMsg">🎉 Ура! Усі предмети названо!</div>
+          </div>
+
+          <div id="midTarget"></div>
+        </div>
+
+        <div class="rightGroup">
+          <div class="imgTargets three" id="rightTargets"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const IMG_EXT = "png";
+    const AUDIO_EXT = "mp3";
+    const ASSET_PATH = "./";
+
+    const items = [
+      { id: 1, img: `${ASSET_PATH}1.${IMG_EXT}`, audio: `${ASSET_PATH}1.1.${AUDIO_EXT}` },
+      { id: 2, img: `${ASSET_PATH}2.${IMG_EXT}`, audio: `${ASSET_PATH}2.1.${AUDIO_EXT}` },
+      { id: 3, img: `${ASSET_PATH}3.${IMG_EXT}`, audio: `${ASSET_PATH}3.1.${AUDIO_EXT}` },
+      { id: 4, img: `${ASSET_PATH}4.${IMG_EXT}`, audio: `${ASSET_PATH}4.1.${AUDIO_EXT}` },
+      { id: 5, img: `${ASSET_PATH}5.${IMG_EXT}`, audio: `${ASSET_PATH}5.1.${AUDIO_EXT}` },
+      { id: 6, img: `${ASSET_PATH}6.${IMG_EXT}`, audio: `${ASSET_PATH}6.1.${AUDIO_EXT}` },
+      { id: 7, img: `${ASSET_PATH}7.${IMG_EXT}`, audio: `${ASSET_PATH}7.1.${AUDIO_EXT}` },
+    ];
+
+    const taskAudioSrc = `${ASSET_PATH}z.${AUDIO_EXT}`;
+
+    const discussionQuestions = [
+      { text: "У яких словах звук [а] знаходиться на початку?", audio: `${ASSET_PATH}1_.${AUDIO_EXT}` },
+      { text: "Назви слова, у яких звук [а] знаходиться у кінці.", audio: `${ASSET_PATH}2_.${AUDIO_EXT}` },
+      { text: "А чи є такі слова, у яких звук [а] вживається і на початку, і в кінці? Назви.", audio: `${ASSET_PATH}3_.${AUDIO_EXT}` },
+      { text: "Вимов слово «альбатрос».", audio: `${ASSET_PATH}4_.${AUDIO_EXT}` },
+      { text: "Де в ньому чується звук [а]?", audio: `${ASSET_PATH}5_.${AUDIO_EXT}` },
+    ];
+
+    const $ = (sel) => document.querySelector(sel);
+
+    let currentAudio = null;
+    function playAudio(src){
+      if(!src) return;
+      try{
+        if(currentAudio){
+          currentAudio.pause();
+          currentAudio.currentTime = 0;
+        }
+        const a = new Audio(src);
+        currentAudio = a;
+        a.play().catch(()=>{});
+      }catch(e){}
+    }
+
+    function shuffle(arr){
+      const a = arr.slice();
+      for(let i=a.length-1;i>0;i--){
+        const j = Math.floor(Math.random()*(i+1));
+        [a[i],a[j]] = [a[j],a[i]];
+      }
+      return a;
+    }
+
+    function renderDiscussion(){
+      const qWrap = $("#questions");
+      qWrap.innerHTML = "";
+      discussionQuestions.forEach((q, idx)=>{
+        const row = document.createElement("div");
+        row.className = "qItem";
+        row.innerHTML = `
+          <div class="qNum">${idx+1}</div>
+          <div class="qText">${q.text}</div>
+          <button class="btn btnAudio btnSmall" type="button" title="🔊">🔊</button>
+        `;
+        row.querySelector("button").addEventListener("click",(e)=>{
+          e.stopPropagation();
+          playAudio(q.audio);
+        });
+        qWrap.appendChild(row);
+      });
+    }
+
+    const usedSounds = new Set();
+    const winMsg = $("#winMsg");
+
+    function renderGame(){
+      usedSounds.clear();
+      winMsg.classList.remove("show");
+
+      const shuffled = shuffle(items);
+
+      const leftItems = shuffled.slice(0,3);
+      const rightItems = shuffled.slice(3,6);
+      const midItem = shuffled[6];
+
+      $("#leftTargets").innerHTML = "";
+      $("#rightTargets").innerHTML = "";
+      $("#midTarget").innerHTML = "";
+
+      leftItems.forEach(it => $("#leftTargets").appendChild(makeImageTarget(it)));
+      rightItems.forEach(it => $("#rightTargets").appendChild(makeImageTarget(it)));
+
+      // Raised 7th image
+      $("#midTarget").appendChild(makeImageTarget(midItem, true));
+
+      // Sounds: 6 go into 2 columns, 7th centered
+      const chipItems = shuffle(items);
+      const last = chipItems[chipItems.length - 1];        // 7th
+      const firstSix = chipItems.slice(0, chipItems.length - 1);
+
+      const wrap = $("#soundChips");
+      wrap.innerHTML = "";
+      firstSix.forEach(it => wrap.appendChild(makeSoundChip(it, false)));
+      wrap.appendChild(makeSoundChip(last, true));          // centered
+    }
+
+    function makeImageTarget(it, isMid=false){
+      const t = document.createElement("div");
+      t.className = "imgTarget" + (isMid ? " mid" : "");
+      t.dataset.targetId = String(it.id);
+      t.innerHTML = `
+        <img class="imgBig" src="${it.img}" alt="">
+        <div class="dropRow">
+          <div class="dropSlot">+</div>
+          <div class="resultIcon"></div>
+        </div>
+      `;
+
+      t.addEventListener("dragover", (e)=>{
+        e.preventDefault();
+        t.classList.add("dragover");
+        e.dataTransfer.dropEffect = "move";
+      });
+      t.addEventListener("dragleave", ()=> t.classList.remove("dragover"));
+      t.addEventListener("drop", (e)=>{
+        e.preventDefault();
+        t.classList.remove("dragover");
+        const soundId = Number(e.dataTransfer.getData("text/plain"));
+        if(!soundId) return;
+        onDropSound(soundId, it.id, t);
+      });
+
+      return t;
+    }
+
+    function makeSoundChip(it, centered=false){
+      const chip = document.createElement("div");
+      chip.className = "chip" + (centered ? " centered" : "");
+      chip.draggable = true;
+      chip.dataset.soundId = String(it.id);
+      chip.innerHTML = `<button class="play" type="button" title="🔊">🔊</button>`;
+
+      chip.addEventListener("dragstart", (e)=>{
+        if(usedSounds.has(it.id)){ e.preventDefault(); return; }
+        chip.classList.add("dragging");
+        e.dataTransfer.setData("text/plain", String(it.id));
+        e.dataTransfer.effectAllowed = "move";
+      });
+      chip.addEventListener("dragend", ()=> chip.classList.remove("dragging"));
+
+      chip.querySelector(".play").addEventListener("click", (e)=>{
+        e.stopPropagation();
+        playAudio(it.audio);
+      });
+
+      return chip;
+    }
+
+    function findChip(soundId){
+      return document.querySelector(`.chip[data-sound-id="${soundId}"]`);
+    }
+
+    function clearRetry(targetEl){
+      const r = targetEl.querySelector(".retryIcon");
+      if(r) r.remove();
+    }
+
+    function onDropSound(soundId, targetId, targetEl){
+      if(usedSounds.has(soundId)) return;
+
+      const slot = targetEl.querySelector(".dropSlot");
+      const icon = targetEl.querySelector(".resultIcon");
+      if(slot.classList.contains("filled")) return;
+
+      clearRetry(targetEl);
+
+      slot.textContent = "🔊";
+      slot.classList.add("filled");
+
+      const correct = (soundId === targetId);
+
+      icon.style.display = "grid";
+      icon.classList.remove("ok","bad");
+      icon.classList.add(correct ? "ok" : "bad");
+      icon.textContent = correct ? "✓" : "✕";
+
+      if(correct){
+        usedSounds.add(soundId);
+
+        const chip = findChip(soundId);
+        if(chip){
+          chip.draggable = false;
+          chip.style.opacity = "0.55";
+          chip.style.borderColor = "rgba(22,163,74,.35)";
+          chip.style.background = "rgba(22,163,74,.12)";
+        }
+        if(usedSounds.size === items.length){
+          winMsg.classList.add("show");
+        }
+      }else{
+        const retry = document.createElement("button");
+        retry.className = "retryIcon";
+        retry.type = "button";
+        retry.title = "↺";
+        retry.textContent = "↺";
+        retry.addEventListener("click", (e)=>{
+          e.stopPropagation();
+          slot.classList.remove("filled");
+          slot.textContent = "+";
+          icon.style.display = "none";
+          icon.textContent = "";
+          icon.classList.remove("ok","bad");
+          retry.remove();
+        });
+        targetEl.appendChild(retry);
+      }
+    }
+
+    /* COLLAPSE */
+    const discussionBody = $("#discussionBody");
+    const toggleBtn = $("#toggleBtn");
+    const toggleIcon = $("#toggleIcon");
+    const toggleHead = $("#toggleDiscussion");
+
+    function setDiscussionOpen(open){
+      discussionBody.classList.toggle("open", open);
+      discussionBody.setAttribute("aria-hidden", String(!open));
+      toggleHead.setAttribute("aria-expanded", String(open));
+      toggleBtn.textContent = open ? "−" : "+";
+      toggleIcon.textContent = open ? "−" : "👁️";
+    }
+    toggleHead.addEventListener("click", ()=> setDiscussionOpen(!discussionBody.classList.contains("open")));
+
+    $("#resetBtn").addEventListener("click", ()=> renderGame());
+    $("#taskAudioBtn").addEventListener("click", ()=> playAudio(taskAudioSrc));
+
+    renderDiscussion();
+    setDiscussionOpen(false);
+    renderGame();
+  </script>
+</body>
+</html>

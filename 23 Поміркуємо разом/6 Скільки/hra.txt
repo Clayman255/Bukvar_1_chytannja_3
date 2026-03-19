@@ -1,0 +1,309 @@
+<!doctype html> 
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Скільки? - Встанови відповідність</title>
+  <style>
+    :root {
+      --bg: #fdf5e6;
+      --accent: #4da6ff;
+      --bad: #ef4444;
+      --good: #16a34a;
+      --text-main: #000000;
+      --dark-blue: #1e3a8a;
+    }
+
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: var(--bg);
+      color: var(--text-main);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 10px;
+      overflow: auto; 
+    }
+
+    header { text-align: center; margin-bottom: 3px; } 
+    h1 { color: #000; margin-bottom: 3px; font-size: 29px; } 
+    
+    .task-desc {
+      font-size: 20px; 
+      background: #fff; padding: 6px 14px; 
+      border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      border-left: 6px solid var(--accent); margin-bottom: 6px; 
+      max-width: 800px;
+    }
+
+    .game-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 1000px; 
+      display: grid;
+      grid-template-columns: 162px 1fr 162px; 
+      gap: 15px;
+      align-items: stretch;
+      min-height: 580px; 
+    }
+
+    #line-canvas {
+      position: absolute;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      pointer-events: none;
+      z-index: 5;
+    }
+
+    .column {
+      display: flex;
+      flex-direction: column;
+      gap: 5px; 
+      z-index: 6;
+      justify-content: space-between;
+    }
+
+    #col-text-center {
+      align-items: center; 
+      justify-content: space-between; 
+      padding: 6px 0; 
+    }
+
+    .item {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+      border: 4px solid transparent;
+      transition: all 0.2s;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #000;
+      font-weight: bold;
+      user-select: none;
+      text-align: center;
+      box-sizing: border-box;
+    }
+
+    .item.text-card { 
+      font-size: 21px; 
+      padding: 4px 10px; 
+      min-height: 44px; 
+      width: 160px; 
+    }
+
+    .item.img-card { 
+      padding: 4px; 
+      overflow: hidden;
+      width: 178px;  
+      height: 178px; 
+    }
+
+    .item.img-card img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain; 
+      display: block;
+    }
+
+    .item.selected { border-color: var(--accent); background-color: #fff9f0; transform: scale(1.02); }
+    
+    .item.matched { 
+      cursor: default; 
+      border-color: var(--good) !important; 
+      box-shadow: 0 0 10px rgba(22, 163, 74, 0.2);
+      opacity: 0.8;
+    }
+
+    .item.error { animation: shake 0.4s; border-color: var(--bad); }
+
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      75% { transform: translateX(5px); }
+    }
+
+    .win-message {
+      display: none; position: fixed; top: 50%; left: 50%;
+      transform: translate(-50%, -50%); background: white;
+      padding: 40px; border-radius: 20px; font-size: 3rem;
+      color: var(--good); border: 8px solid var(--good);
+      box-shadow: 0 20px 50px rgba(0,0,0,0.4); z-index: 100; text-align: center;
+    }
+
+    button.reset-btn {
+      display: none; 
+      margin: 6px 0; 
+      padding: 11px 39px; 
+      font-size: 20px; 
+      background: #ffffff;
+      color: var(--dark-blue);
+      border: 3px solid var(--dark-blue);
+      border-radius: 10px; cursor: pointer; font-weight: bold;
+      transition: background 0.3s;
+
+      position: static; /* було sticky */
+      bottom: auto;     /* прибрано */
+      z-index: auto;    /* прибрано */
+    }
+    
+    button.reset-btn:hover { background: #f0f4ff; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>Скільки?</h1>
+  <div class="task-desc">Встанови відповідність між словом та зображенням.</div>
+</header>
+
+<div class="game-wrapper" id="gameArea">
+  <svg id="line-canvas">
+    <defs>
+      <marker id="arrowhead" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+        <polygon points="0 0, 8 3, 0 6" fill="context-stroke" />
+      </marker>
+    </defs>
+  </svg>
+
+  <div class="column" id="col-img-left"></div>
+  <div class="column" id="col-text-center"></div>
+  <div class="column" id="col-img-right"></div>
+</div>
+
+<button class="reset-btn" id="btnReset">Грати знову</button>
+
+<div id="winMsg" class="win-message">Чудово!</div>
+
+<script>
+  const gameData = [
+    { id: 1, text: "один", imgId: 1 },
+    { id: 2, text: "два", imgId: 2 },
+    { id: 3, text: "три", imgId: 3 },
+    { id: 4, text: "чотири", imgId: 4 },
+    { id: 5, text: "п'ять", imgId: 5 },
+    { id: 6, text: "багато", imgId: 6 }
+  ];
+
+  const colors = ['#4da6ff', '#22c55e', '#a855f7', '#f59e0b', '#ec4899', '#06b6d4'];
+  let activeElement = null;
+  let matchedCount = 0;
+
+  function initGame() {
+    const colImgLeft = document.getElementById('col-img-left');
+    const colImgRight = document.getElementById('col-img-right');
+    const colText = document.getElementById('col-text-center');
+    const canvas = document.getElementById('line-canvas');
+    
+    colImgLeft.innerHTML = ''; colImgRight.innerHTML = ''; colText.innerHTML = '';
+    canvas.querySelectorAll('line').forEach(l => l.remove());
+    matchedCount = 0; activeElement = null;
+    
+    document.getElementById('winMsg').style.display = 'none';
+    document.getElementById('btnReset').style.display = 'none';
+
+    const shuffledImgs = [...gameData].sort(() => Math.random() - 0.5);
+    const shuffledTexts = [...gameData].sort(() => Math.random() - 0.5);
+
+    shuffledTexts.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'item text-card';
+      div.textContent = item.text;
+      div.dataset.match = item.imgId;
+      div.dataset.type = 'text';
+      div.dataset.color = colors[index % colors.length];
+      div.onclick = () => handleSelect(div);
+      colText.appendChild(div);
+    });
+
+    shuffledImgs.forEach((item, index) => {
+      const div = document.createElement('div');
+      div.className = 'item img-card';
+      div.innerHTML = `<img src="${item.imgId}.png" alt="зображення">`;
+      div.dataset.id = item.imgId;
+      div.dataset.type = 'img';
+      div.onclick = () => handleSelect(div);
+      
+      if (index < 3) colImgLeft.appendChild(div);
+      else colImgRight.appendChild(div);
+    });
+  }
+
+  function handleSelect(el) {
+    if (el.classList.contains('matched')) return;
+
+    if (!activeElement) {
+      activeElement = el;
+      el.classList.add('selected');
+    } else if (activeElement.dataset.type === el.dataset.type) {
+      activeElement.classList.remove('selected');
+      activeElement = el;
+      el.classList.add('selected');
+    } else {
+      const textEl = activeElement.dataset.type === 'text' ? activeElement : el;
+      const imgEl = activeElement.dataset.type === 'img' ? activeElement : el;
+
+      if (textEl.dataset.match == imgEl.dataset.id) {
+        textEl.classList.add('matched');
+        imgEl.classList.add('matched');
+        textEl.classList.remove('selected');
+        imgEl.classList.remove('selected');
+        
+        drawArrow(textEl, imgEl, textEl.dataset.color);
+        matchedCount++;
+        
+        if (matchedCount === gameData.length) {
+          const winMsg = document.getElementById('winMsg');
+          winMsg.style.display = 'block';
+          document.getElementById('btnReset').style.display = 'block';
+          
+          // Ховаємо повідомлення через 5 секунд
+          setTimeout(() => {
+            winMsg.style.display = 'none';
+          }, 5000);
+        }
+      } else {
+        el.classList.add('error');
+        activeElement.classList.add('error');
+        setTimeout(() => {
+          el.classList.remove('error');
+          activeElement.classList.remove('error');
+          activeElement.classList.remove('selected');
+          activeElement = null;
+        }, 400);
+        return;
+      }
+      activeElement.classList.remove('selected');
+      activeElement = null;
+    }
+  }
+
+  function drawArrow(el1, el2, color) {
+    const r1 = el1.getBoundingClientRect();
+    const r2 = el2.getBoundingClientRect();
+    const wr = document.getElementById('gameArea').getBoundingClientRect();
+    
+    const isImgLeft = r2.left < r1.left;
+    const x1 = isImgLeft ? (r1.left - wr.left + 5) : (r1.right - wr.left - 5);
+    const y1 = r1.top + r1.height / 2 - wr.top;
+    const x2 = isImgLeft ? (r2.right - wr.left - 5) : (r2.left - wr.left + 5);
+    const y2 = r2.top + r2.height / 2 - wr.top;
+    
+    const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+    line.setAttribute('x1', x1); line.setAttribute('y1', y1);
+    line.setAttribute('x2', x2); line.setAttribute('y2', y2);
+    line.setAttribute('stroke', color); 
+    line.setAttribute('stroke-width', '4');
+    line.setAttribute('marker-end', 'url(#arrowhead)');
+    document.getElementById('line-canvas').appendChild(line);
+  }
+
+  document.getElementById('btnReset').onclick = initGame;
+  window.onload = initGame;
+  window.onresize = () => { if(matchedCount > 0) initGame(); };
+</script>
+</body>
+</html>
